@@ -17,6 +17,7 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private JWTTokenProvider jwtTokenProvider;
 
@@ -56,6 +57,4 @@ public class UserController {
         userService.deleteUser(userId);
         return ResponseEntity.ok().build();
     }
-
-    //TODO update service,
 }

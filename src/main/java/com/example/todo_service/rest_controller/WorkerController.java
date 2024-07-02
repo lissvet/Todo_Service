@@ -6,14 +6,15 @@ import com.example.todo_service.service.TaskService;
 import com.example.todo_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Duration;
+import java.util.List;
 
 @RestController
 @RequestMapping("/worker")
-@Secured("ROLE_WORKER")
 public class WorkerController {
 
     @Autowired
@@ -22,27 +23,28 @@ public class WorkerController {
     @Autowired
     private UserService userService;
 
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
+    }
+
     @PutMapping("/tasks/{taskId}/status")
-    public ResponseEntity<Task> updateTaskStatus(@PathVariable Long taskId, @RequestParam Task.Status status, @RequestParam Long userId) {
-        Task updatedTask = taskService.updateTaskStatus(taskId, status, userId);
+    public ResponseEntity<Task> updateTaskStatus(@PathVariable Long taskId, @RequestParam Task.Status status) {
+        User worker = getCurrentUser();
+        Task updatedTask = taskService.updateTaskStatus(taskId, status, worker.getId());
         return ResponseEntity.ok(updatedTask);
     }
 
-    @GetMapping("/tasks/{taskId}/duration")
-    public ResponseEntity<Duration> getTaskDuration(@PathVariable Long taskId) {
-        Duration duration = taskService.getTaskDuration(taskId);
-        return ResponseEntity.ok(duration);
-    }
-
-    @GetMapping("/tasks/{taskId}/status")
-    public ResponseEntity<Task.Status> getTaskStatus(@PathVariable Long taskId) {
-        Task.Status status = taskService.getTaskStatus(taskId);
-        return ResponseEntity.ok(status);
+    @GetMapping("/tasks")
+    public ResponseEntity<List<Task>> getTasksByWorker() {
+        User worker = getCurrentUser();
+        List<Task> tasks = taskService.getTasksByUser(worker);
+        return ResponseEntity.ok(tasks);
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getWorkerProfile(@RequestParam Long userId) {
-        User worker = userService.findById(userId);
+    public ResponseEntity<User> getWorkerProfile() {
+        User worker = getCurrentUser();
         return ResponseEntity.ok(worker);
     }
 

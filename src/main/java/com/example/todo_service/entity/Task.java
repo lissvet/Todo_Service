@@ -25,7 +25,7 @@ public class Task {
     private LocalDateTime endTime;
 
     @ManyToOne
-    @JoinColumn(name = "manager_id")
+    @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
 
     @ManyToMany

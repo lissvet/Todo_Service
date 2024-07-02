@@ -71,10 +71,11 @@ public class TaskService {
         }).orElseThrow(() -> new ResourceNotFoundException("Task not found"));
     }
 
-    public Duration getTaskDuration(Long taskId) {
+    public long getTaskDuration(Long taskId) {
         return taskRepository.findById(taskId).map(task -> {
             LocalDateTime endTime = task.getEndTime() != null ? task.getEndTime() : LocalDateTime.now();
-            return Duration.between(task.getStartTime(), endTime);
+            Duration duration = Duration.between(task.getStartTime(), endTime);
+            return duration.toMinutes();
         }).orElseThrow(() -> new ResourceNotFoundException("Task not found"));
     }
 

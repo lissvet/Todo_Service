@@ -5,11 +5,11 @@ import com.example.todo_service.entity.User;
 import com.example.todo_service.service.TaskService;
 import com.example.todo_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -26,13 +26,16 @@ public class TaskController {
     @Autowired
     private UserService userService;
 
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
+    }
+
     @PostMapping("/create")
     @Secured("ROLE_MANAGER")
     public ResponseEntity<?> createTask(@RequestBody Task task) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) auth.getPrincipal();
-        User manager = userService.findByUsername(userDetails.getUsername());
-        Task createdTask = taskService.createTask(task, manager.getId());
+        User user = getCurrentUser();
+        Task createdTask = taskService.createTask(task, user.getId());
         return ResponseEntity.ok(createdTask);
     }
 
@@ -74,7 +77,7 @@ public class TaskController {
     @GetMapping("/{taskId}/duration")
     @Secured({"ROLE_MANAGER", "ROLE_WORKER"})
     public ResponseEntity<?> getTaskDuration(@PathVariable Long taskId) {
-        Duration duration = taskService.getTaskDuration(taskId);
+        long duration = taskService.getTaskDuration(taskId);
         return ResponseEntity.ok(duration);
     }
 

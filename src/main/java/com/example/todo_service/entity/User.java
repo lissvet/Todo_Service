@@ -15,18 +15,20 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String username;
     private String password;
 
     @ElementCollection
     private Set<Role> roles;
 
+    @Transient
     private Integer completedTaskCount = 0;
 
-    @OneToMany(mappedBy = "manager")
+    @OneToMany(mappedBy = "manager", cascade = CascadeType.ALL)
     private Set<Task> managedTasks = new HashSet<>();
 
-    @ManyToMany(mappedBy = "workers")
+    @ManyToMany(mappedBy = "workers", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Task> workingTasks = new HashSet<>();
 
     public enum Role implements GrantedAuthority {
@@ -39,6 +41,8 @@ public class User {
     }
 
     public void incrementCompletedTaskCount() {
-        this.completedTaskCount += 1;
+        if (roles.contains(Role.ROLE_WORKER)) {
+            this.completedTaskCount += 1;
+        }
     }
 }
