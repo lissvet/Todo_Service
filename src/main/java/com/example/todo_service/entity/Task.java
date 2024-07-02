@@ -17,7 +17,9 @@ public class Task {
     private Long id;
     private String title;
     private String description;
-    private Boolean completed;
+
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.TODO;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -33,4 +35,15 @@ public class Task {
             inverseJoinColumns = @JoinColumn(name = "worker_id")
     )
     private Set<User> workers = new HashSet<>();
+
+    public enum Status {
+        TODO, IN_PROGRESS, DONE
+    }
+
+    public void setStatus(Status status, User user) {
+        if (this.status != Status.DONE && status == Status.DONE) {
+            user.incrementCompletedTaskCount();
+        }
+        this.status = status;
+    }
 }

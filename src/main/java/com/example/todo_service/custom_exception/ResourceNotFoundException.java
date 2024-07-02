@@ -1,4 +1,4 @@
-package com.example.todo_service.сustom_exception;
+package com.example.todo_service.custom_exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

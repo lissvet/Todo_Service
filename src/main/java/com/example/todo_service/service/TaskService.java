@@ -4,7 +4,7 @@ import com.example.todo_service.entity.Task;
 import com.example.todo_service.entity.User;
 import com.example.todo_service.repository.TaskRepository;
 import com.example.todo_service.repository.UserRepository;
-import com.example.todo_service.сustom_exception.ResourceNotFoundException;
+import com.example.todo_service.custom_exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +44,7 @@ public class TaskService {
         return taskRepository.findById(id).map(task -> {
             task.setTitle(taskDetails.getTitle());
             task.setDescription(taskDetails.getDescription());
-            task.setCompleted(taskDetails.getCompleted());
+            task.setStatus(taskDetails.getStatus());
             if (taskDetails.getStartTime() != null) {
                 task.setStartTime(taskDetails.getStartTime());
             }
@@ -61,11 +61,12 @@ public class TaskService {
 
     public Task assignWorker(Long taskId, Long workerId) {
         return taskRepository.findById(taskId).map(task -> {
-            userRepository.findById(workerId).ifPresent(worker -> {
-                if (worker.getRoles().contains(User.Role.ROLE_WORKER)) {
-                    task.getWorkers().add(worker);
-                }
-            });
+            User worker = userRepository.findById(workerId).orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
+            if (worker.getRoles().contains(User.Role.ROLE_WORKER)) {
+                task.getWorkers().add(worker);
+            } else {
+                throw new IllegalArgumentException("User is not a worker");
+            }
             return taskRepository.save(task);
         }).orElseThrow(() -> new ResourceNotFoundException("Task not found"));
     }
@@ -80,5 +81,34 @@ public class TaskService {
     public List<Task> getTasksByUser(User user) {
         return taskRepository.findByWorkersContains(user);
     }
-}
 
+    public Task updateTaskStatus(Long taskId, Task.Status status, Long userId) {
+        return taskRepository.findById(taskId).map(task -> {
+            User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            task.setStatus(status, user);
+            if (status == Task.Status.DONE) {
+                task.setEndTime(LocalDateTime.now());
+            }
+            return taskRepository.save(task);
+        }).orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+    }
+
+    public List<Task> getTasksByManagerId(Long managerId) {
+        User manager = userRepository.findById(managerId).orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
+        return taskRepository.findByManager(manager);
+    }
+
+    public Duration analyzeTaskPerformance(Long taskId) {
+        return taskRepository.findById(taskId).map(task -> {
+            LocalDateTime startTime = task.getStartTime();
+            LocalDateTime endTime = task.getEndTime() != null ? task.getEndTime() : LocalDateTime.now();
+            return Duration.between(startTime, endTime);
+        }).orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+    }
+
+    public Task.Status getTaskStatus(Long taskId) {
+        return taskRepository.findById(taskId)
+                .map(Task::getStatus)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+    }
+}

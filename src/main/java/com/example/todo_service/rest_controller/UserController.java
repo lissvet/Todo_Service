@@ -36,13 +36,6 @@ public class UserController {
         throw new RuntimeException();
     }
 
-//    @PostMapping("/create")
-//    @Secured({"ROLE_ADMIN"})
-//    public ResponseEntity<?> createUser(@RequestBody User user) {
-//        User createdUser = userService.add(user);
-//        return ResponseEntity.ok(createdUser);
-//    }
-
     @GetMapping("/{username}")
     @Secured({"ROLE_ADMIN", "ROLE_MANAGER", "ROLE_WORKER"})
     public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
@@ -63,4 +56,6 @@ public class UserController {
         userService.deleteUser(userId);
         return ResponseEntity.ok().build();
     }
+
+    //TODO update service,
 }

@@ -43,4 +43,13 @@ public class UserService {
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
+
+    public User updateUser(User updatedUser) {
+        return userRepository.findById(updatedUser.getId()).map(user -> {
+            user.setUsername(updatedUser.getUsername());
+            user.setPassword(new BCryptPasswordEncoder().encode(updatedUser.getPassword()));
+            user.setRoles(updatedUser.getRoles());
+            return userRepository.save(user);
+        }).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 }

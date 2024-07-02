@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -20,6 +21,14 @@ public class User {
     @ElementCollection
     private Set<Role> roles;
 
+    private Integer completedTaskCount = 0;
+
+    @OneToMany(mappedBy = "manager")
+    private Set<Task> managedTasks = new HashSet<>();
+
+    @ManyToMany(mappedBy = "workers")
+    private Set<Task> workingTasks = new HashSet<>();
+
     public enum Role implements GrantedAuthority {
         ROLE_MANAGER, ROLE_WORKER, ROLE_ADMIN;
 
@@ -27,5 +36,9 @@ public class User {
         public String getAuthority() {
             return this.name();
         }
+    }
+
+    public void incrementCompletedTaskCount() {
+        this.completedTaskCount += 1;
     }
 }
