@@ -1,16 +1,27 @@
 package com.example.todo_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "tb_user")
-public class User {
+//@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "roles")
+//@JsonSubTypes({
+//        @JsonSubTypes.Type(value = Worker.class, name = "ROLE_WORKER"),
+//        @JsonSubTypes.Type(value = Manager.class, name = "ROLE_MANAGER")
+//})
+public abstract class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,20 +30,12 @@ public class User {
     private String username;
     private String password;
 
-    @ElementCollection
-    private Set<Role> roles;
-
-    @Transient
-    private Integer completedTaskCount = 0;
-
-    @OneToMany(mappedBy = "manager", cascade = CascadeType.ALL)
-    private Set<Task> managedTasks = new HashSet<>();
-
-    @ManyToMany(mappedBy = "workers", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Task> workingTasks = new HashSet<>();
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    private Set<Role> roles = new HashSet<>();
 
     public enum Role implements GrantedAuthority {
-        ROLE_MANAGER, ROLE_WORKER, ROLE_ADMIN;
+        ROLE_MANAGER, ROLE_WORKER;
 
         @Override
         public String getAuthority() {
@@ -40,9 +43,28 @@ public class User {
         }
     }
 
-    public void incrementCompletedTaskCount() {
-        if (roles.contains(Role.ROLE_WORKER)) {
-            this.completedTaskCount += 1;
-        }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }

@@ -2,9 +2,12 @@ package com.example.todo_service.service;
 
 import com.example.todo_service.entity.Task;
 import com.example.todo_service.entity.User;
+import com.example.todo_service.entity.Worker;
+import com.example.todo_service.repository.ManagerRepository;
 import com.example.todo_service.repository.TaskRepository;
 import com.example.todo_service.repository.UserRepository;
 import com.example.todo_service.custom_exception.ResourceNotFoundException;
+import com.example.todo_service.repository.WorkerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +23,13 @@ public class TaskService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private WorkerRepository workerRepository;
+    @Autowired
+    private ManagerRepository managerRepository;
 
     public Task createTask(Task task, Long managerId) {
-        return userRepository.findById(managerId).map(manager -> {
-            if (!manager.getRoles().contains(User.Role.ROLE_MANAGER)) {
-                throw new IllegalArgumentException("User is not a manager");
-            }
+        return managerRepository.findById(managerId).map(manager -> {
             task.setManager(manager);
             task.setStartTime(LocalDateTime.now());
             return taskRepository.save(task);
@@ -61,7 +65,7 @@ public class TaskService {
 
     public Task assignWorker(Long taskId, Long workerId) {
         return taskRepository.findById(taskId).map(task -> {
-            User worker = userRepository.findById(workerId).orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
+            Worker worker = workerRepository.findById(workerId).orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
             if (worker.getRoles().contains(User.Role.ROLE_WORKER)) {
                 task.getWorkers().add(worker);
             } else {
