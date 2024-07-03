@@ -1,23 +1,23 @@
 package com.example.todo_service.rest_controller;
 
-import com.example.todo_service.entity.Manager;
+import com.example.todo_service.entity.ErrorResponse;
 import com.example.todo_service.entity.User;
-import com.example.todo_service.entity.Worker;
-import com.example.todo_service.repository.ManagerRepository;
-import com.example.todo_service.repository.UserRepository;
-import com.example.todo_service.repository.WorkerRepository;
 import com.example.todo_service.security.auth.JWTTokenProvider;
 import com.example.todo_service.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 public class UserController {
 
     @Autowired
@@ -26,59 +26,45 @@ public class UserController {
     @Autowired
     private JWTTokenProvider jwtTokenProvider;
 
-//    @PostMapping
-//    public ResponseEntity<User> createUser(@RequestBody User user) {
-//        User add = userService.add(user);
-//        return ResponseEntity.ok(add);
-//    }
-
-    @PostMapping("/manager")
-    public ResponseEntity<User> createManager(@RequestBody Manager user) {
-        User add = userService.addManager(user);
+    @PostMapping
+    public ResponseEntity<?> createUser(@Valid @RequestBody User user) {
+        if (userService.existsByUsername(user.getUsername())){
+            ErrorResponse errorResponse = new ErrorResponse();
+            errorResponse.setTitle("Duplicate Username");
+            errorResponse.setStatus(409);
+            errorResponse.getErrors().add("Username already exists");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+        User add = userService.add(user);
         return ResponseEntity.ok(add);
     }
 
-    @PostMapping("/worker")
-    public ResponseEntity<User> createWorker(@RequestBody Worker user) {
-        User add = userService.addWorker(user);
-        return ResponseEntity.ok(add);
-    }
-
-//    @PostMapping("/login")
-//    public ResponseEntity<String> login(@RequestBody User user) {
-//        User byUsername = userService.findByUsername(user.getUsername());
-//        if (new BCryptPasswordEncoder().matches(user.getPassword(), byUsername.getPassword())) {
-//            String token = jwtTokenProvider.generateToken(byUsername.getId(), byUsername.getUsername(), byUsername.getPassword(), byUsername.getRoles());
-//            return ResponseEntity.ok(token);
-//        }
-//        throw new RuntimeException();
-//    }
-
-    @PostMapping("/login_manager")
-    public ResponseEntity<String> login(@RequestBody Manager manager) {
-        Manager byUsername = userService.findManagerByUsername(manager.getUsername());
-        if (new BCryptPasswordEncoder().matches(manager.getPassword(), byUsername.getPassword())) {
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody User user) {
+        User byUsername = userService.findByUsername(user.getUsername());
+        if (new BCryptPasswordEncoder().matches(user.getPassword(), byUsername.getPassword())) {
             String token = jwtTokenProvider.generateToken(byUsername.getId(), byUsername.getUsername(), byUsername.getPassword(), byUsername.getRoles());
             return ResponseEntity.ok(token);
         }
-        throw new RuntimeException();
-    }
-
-    @PostMapping("/login_worker")
-    public ResponseEntity<String> login(Worker worker) {
-        Worker byUsername = userService.findWorkerByUsername(worker.getUsername());
-        if (new BCryptPasswordEncoder().matches(worker.getPassword(), byUsername.getPassword())) {
-            String token = jwtTokenProvider.generateToken(byUsername.getId(), byUsername.getUsername(), byUsername.getPassword(), byUsername.getRoles());
-            return ResponseEntity.ok(token);
-        }
-        throw new RuntimeException();
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTitle("Wrong password");
+        errorResponse.setStatus(401);
+        errorResponse.getErrors().add("Wrong password");
+        return ResponseEntity.badRequest().body(errorResponse.getTitle());
     }
 
     @GetMapping("/{username}")
     @Secured({"ROLE_ADMIN", "ROLE_MANAGER", "ROLE_WORKER"})
     public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
-        User user = userService.findByUsername(username);
-        return ResponseEntity.ok(user);
+        if(userService.existsByUsername(username)){
+           User user = userService.findByUsername(username);
+            return ResponseEntity.ok(user);
+        }
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTitle("Wrong username");
+        errorResponse.setStatus(404);
+        errorResponse.getErrors().add("User isn't exist");
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
     @GetMapping

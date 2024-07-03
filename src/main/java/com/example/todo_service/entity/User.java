@@ -1,41 +1,50 @@
 package com.example.todo_service.entity;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
+
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.HashSet;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Set;
 
 @Data
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "tb_user")
-//@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "roles")
-//@JsonSubTypes({
-//        @JsonSubTypes.Type(value = Worker.class, name = "ROLE_WORKER"),
-//        @JsonSubTypes.Type(value = Manager.class, name = "ROLE_MANAGER")
-//})
-public abstract class User implements UserDetails {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
     private String username;
+
+    @NotEmpty
+    @NotBlank
+    @NotNull
+    @Size(min = 3, max = 20)
     private String password;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @Enumerated(EnumType.STRING)
-    private Set<Role> roles = new HashSet<>();
+    @ElementCollection
+    private Set<Role> roles;
+
+    @Transient
+    private Integer completedTaskCount = 0;
+
+//    @OneToMany(mappedBy = "manager", cascade = CascadeType.ALL)
+//    private Set<Task> managedTasks = new HashSet<>();
+//
+//    @ManyToMany(mappedBy = "workers", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//    private Set<Task> workingTasks = new HashSet<>();
 
     public enum Role implements GrantedAuthority {
-        ROLE_MANAGER, ROLE_WORKER;
+        ROLE_MANAGER, ROLE_WORKER, ROLE_ADMIN;
 
         @Override
         public String getAuthority() {
@@ -43,28 +52,7 @@ public abstract class User implements UserDetails {
         }
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
+    public void incrementCompletedTaskCount() {
+            this.completedTaskCount += 1;
     }
 }
