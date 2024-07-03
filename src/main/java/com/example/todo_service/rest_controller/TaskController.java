@@ -5,14 +5,11 @@ import com.example.todo_service.entity.User;
 import com.example.todo_service.service.TaskService;
 import com.example.todo_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 

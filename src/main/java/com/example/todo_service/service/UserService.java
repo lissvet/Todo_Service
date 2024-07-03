@@ -2,7 +2,6 @@ package com.example.todo_service.service;
 
 import com.example.todo_service.entity.User;
 import com.example.todo_service.repository.UserRepository;
-import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
