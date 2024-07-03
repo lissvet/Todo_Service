@@ -15,7 +15,6 @@ public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String title;
     private String description;
 
@@ -27,7 +26,7 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "manager_id", nullable = false)
-    private Manager manager;
+    private User manager;
 
     @ManyToMany
     @JoinTable(
@@ -35,15 +34,15 @@ public class Task {
             joinColumns = @JoinColumn(name = "task_id"),
             inverseJoinColumns = @JoinColumn(name = "worker_id")
     )
-    private Set<Worker> workers = new HashSet<>();
+    private Set<User> workers = new HashSet<>();
 
     public enum Status {
         TODO, IN_PROGRESS, DONE
     }
 
     public void setStatus(Status status, User user) {
-        if (this.status != Status.DONE && status == Status.DONE && user instanceof Worker) {
-            ((Worker) user).incrementCompletedTaskCount();
+        if (this.status != Status.DONE && status == Status.DONE) {
+            user.incrementCompletedTaskCount();
         }
         this.status = status;
     }

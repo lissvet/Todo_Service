@@ -27,7 +27,7 @@ public class UserController {
     private JWTTokenProvider jwtTokenProvider;
 
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<?> createUser(@RequestBody User user) {
         if (userService.existsByUsername(user.getUsername())){
             ErrorResponse errorResponse = new ErrorResponse();
             errorResponse.setTitle("Duplicate Username");

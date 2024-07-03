@@ -1,8 +1,6 @@
 package com.example.todo_service.security.auth;
 
 import com.example.todo_service.entity.User;
-import com.example.todo_service.entity.Manager;
-import com.example.todo_service.entity.Worker;
 import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,33 +40,18 @@ public class JWTTokenProvider {
     }
 
     public Authentication getAuthentication(String token) {
-        Long userId = getUserIdFromJWT(token);
-        String username = getUserUsernameFromJWT(token);
-        String password = getUserPasswordFromJWT(token);
-        Set<User.Role> roles = getUserRolesFromJWT(token);
-
-        User userDetails = createUserInstance(userId, username, password, roles);
-        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
-    }
-
-    private User createUserInstance(Long userId, String username, String password, Set<User.Role> roles) {
-        User user;
-        if (roles.contains(User.Role.ROLE_MANAGER)) {
-            user = new Manager();
-        } else {
-            user = new Worker();
-        }
-        user.setId(userId);
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setRoles(roles);
-        return user;
+        User userDetails = new User();
+        userDetails.setId(getUserIdFromJWT(token));
+        userDetails.setUsername(getUserUsernameFromJWT(token));
+        userDetails.setPassword(getUserPasswordFromJWT(token));
+        userDetails.setRoles(getUserRolesFromJWT(token));
+        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getRoles());
     }
 
     public String resolveToken(HttpServletRequest req) {
         String bearerToken = req.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+            return bearerToken.substring(7, bearerToken.length());
         }
         return null;
     }
@@ -76,6 +59,7 @@ public class JWTTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jws<Claims> claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+
             return !claims.getBody().getExpiration().before(new Date());
         } catch (JwtException | IllegalArgumentException e) {
             return false;
@@ -87,8 +71,8 @@ public class JWTTokenProvider {
     }
 
     public Long getUserIdFromJWT(String token) {
-        Integer id = (Integer) Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().get("id");
-        return Long.valueOf(id);
+        Integer i = (Integer) Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().get("id");
+        return Long.valueOf(i);
     }
 
     public String getUserPasswordFromJWT(String token) {
@@ -108,7 +92,7 @@ public class JWTTokenProvider {
 
     private Set<User.Role> getUserRoleNamesFromJWT(List<String> roles) {
         Set<User.Role> result = new HashSet<>();
-        roles.forEach(role -> result.add(User.Role.valueOf(role)));
+        roles.forEach(s -> result.add(User.Role.valueOf(s)));
         return result;
     }
 }
